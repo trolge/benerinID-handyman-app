@@ -12,7 +12,7 @@ class MarketplaceController extends Controller
         ['slug' => 'plumbing', 'name' => 'Plumbing', 'desc' => 'Leak Repair, Pipe Routing', 'image' => 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=500&auto=format&fit=crop'],
         ['slug' => 'electrical', 'name' => 'Electrical', 'desc' => 'Circuit Repair, Smart Home', 'image' => 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=500&auto=format&fit=crop'],
         ['slug' => 'cleaning', 'name' => 'Home Cleaning', 'desc' => 'Full Sanitization, Office', 'image' => 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=500&auto=format&fit=crop'],
-        ['slug' => 'hvac', 'name' => 'HVAC & AC', 'desc' => 'Filter Replacement, Compressor', 'image' => 'https://images.unsplash.com/photo-1590488057200-e1458e0a3237?w=500&auto=format&fit=crop'],
+        ['slug' => 'hvac', 'name' => 'HVAC & AC', 'desc' => 'Filter Replacement, Compressor', 'image' => 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=500&auto=format&fit=crop'],
         ['slug' => 'carpentry', 'name' => 'Carpentry', 'desc' => 'Cabinetry, Furniture Repair', 'image' => 'https://images.unsplash.com/photo-1581141849291-1125c7b692b5?w=500&auto=format&fit=crop'],
         ['slug' => 'painting', 'name' => 'Painting', 'desc' => 'Interior, Exterior, Touchups', 'image' => 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=500&auto=format&fit=crop']
     ];
@@ -42,7 +42,13 @@ class MarketplaceController extends Controller
             $handyman->TagsArray = $userTags;
             
             // Calculate real rating from database
-            $handyman->average_rating = \App\Models\Rating::where('HandymanID', $handyman->UserID)->avg('Rating') ?? 0;
+            $reviews = \App\Models\Rating::with('customer')
+                ->where('HandymanID', $handyman->UserID)
+                ->latest()
+                ->get();
+            $handyman->average_rating = $reviews->count() > 0 ? round($reviews->avg('Rating'), 1) : 0;
+            $handyman->review_count = $reviews->count();
+            $handyman->reviews = $reviews;
             return $handyman;
         });
 

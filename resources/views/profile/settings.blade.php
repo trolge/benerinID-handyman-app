@@ -184,6 +184,20 @@
                     <textarea name="Expertise" class="form-input" rows="4" placeholder="Describe your experience, certifications, and what makes your services stand out...">{{ old('Expertise', $user->Expertise) }}</textarea>
                     <span class="form-text" style="color:var(--text-muted);">This text will be prominently displayed on your public craftsman card to potential clients.</span>
                 </div>
+
+                <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem; color: var(--primary);">Working Hours</h3>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Start Time</label>
+                        <input type="time" name="WorkingHoursStart" class="form-input" value="{{ old('WorkingHoursStart', $user->WorkingHoursStart ?? '09:00') }}">
+                        <span class="form-text">When you start accepting jobs each day.</span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">End Time</label>
+                        <input type="time" name="WorkingHoursEnd" class="form-input" value="{{ old('WorkingHoursEnd', $user->WorkingHoursEnd ?? '17:00') }}">
+                        <span class="form-text">When you stop accepting jobs each day.</span>
+                    </div>
+                </div>
                 @endif
 
                 <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">Security</h3>

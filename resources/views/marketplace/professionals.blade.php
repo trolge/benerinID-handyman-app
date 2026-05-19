@@ -92,6 +92,23 @@
 
         .empty-state { text-align: center; padding: 4rem 1rem; color: var(--text-muted); }
         .empty-state svg { opacity: 0.5; margin-bottom: 1rem; }
+
+        /* Reviews Modal */
+        .reviews-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:500; align-items:center; justify-content:center; }
+        .reviews-overlay.show { display:flex; }
+        .reviews-sheet { background:white; border-radius:20px; max-width:500px; width:90%; max-height:80vh; overflow-y:auto; padding:2rem; position:relative; }
+        .reviews-sheet h2 { font-size:1.15rem; font-weight:800; margin-bottom:0.25rem; }
+        .reviews-avg { display:flex; align-items:center; gap:0.5rem; margin-bottom:1.5rem; font-size:0.85rem; color:var(--text-muted); }
+        .reviews-avg .stars { color:var(--accent); font-weight:700; }
+        .review-item { border-top:1px solid var(--border-color); padding:1rem 0; }
+        .review-item:first-child { border-top:none; }
+        .review-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem; }
+        .review-author { font-weight:700; font-size:0.85rem; }
+        .review-rating { color:var(--accent); font-size:0.8rem; font-weight:700; }
+        .review-text { font-size:0.85rem; color:var(--text-muted); line-height:1.5; }
+        .review-date { font-size:0.7rem; color:#94a3b8; margin-top:0.25rem; }
+        .reviews-close { position:absolute; top:1rem; right:1rem; cursor:pointer; color:var(--text-muted); background:var(--bg-page); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+        .no-reviews-msg { text-align:center; padding:2rem 0; color:var(--text-muted); font-size:0.9rem; }
     </style>
 </head>
 <body>
@@ -214,11 +231,7 @@
                                 @if($pro->average_rating > 0)
                                 <span class="rating-chip">
                                     <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                                    {{ number_format($pro->average_rating, 1) }}
-                                </span>
-                                @else
-                                <span class="rating-chip" style="color:var(--text-muted); font-size:0.75rem;">
-                                    NEW
+                                    {{ number_format($pro->average_rating, 1) }} <span style="color:var(--text-muted);font-weight:500;">({{ $pro->review_count }})</span>
                                 </span>
                                 @endif
                             </h2>
@@ -252,11 +265,11 @@
                     </div>
 
                     <div class="pro-actions">
-                        <span class="btn-text">
-                            View Portfolio
+                        <span class="btn-text" style="cursor:pointer;" onclick="openReviewsModal({{ $pro->UserID }})">
+                            View Reviews{{ $pro->review_count > 0 ? ' ('.$pro->review_count.')' : '' }}
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                         </span>
-                        <a href="{{ route('booking.create') }}" class="btn-solid">Book Now</a>
+                        <a href="{{ route('booking.create', ['handyman' => $pro->UserID]) }}" class="btn-solid">Book Now</a>
                     </div>
                 </div>
             @endforeach
@@ -265,6 +278,16 @@
         <!-- JavaScript Hidden No Results Message -->
         <div id="noProResultsMsg" style="display:none; text-align:center; padding: 4rem; color: var(--text-muted);">
             No professionals matched your search. Try different keywords.
+        </div>
+    </div>
+
+    <!-- Reviews Modal -->
+    <div class="reviews-overlay" id="reviewsModal">
+        <div class="reviews-sheet">
+            <div class="reviews-close" onclick="closeReviewsModal()">&times;</div>
+            <h2 id="reviewsModalTitle">Reviews</h2>
+            <div class="reviews-avg" id="reviewsModalAvg"></div>
+            <div id="reviewsModalContent"></div>
         </div>
     </div>
 
@@ -313,6 +336,62 @@
                     }
                 });
             }
+        });
+
+        // Reviews data
+        @php
+            $reviewsData = $handymen->mapWithKeys(function($h) {
+                return [$h->UserID => [
+                    'name' => $h->name,
+                    'avg' => $h->average_rating,
+                    'count' => $h->review_count,
+                    'reviews' => $h->reviews->map(function($r) {
+                        return [
+                            'rating' => $r->Rating,
+                            'feedback' => $r->feedback,
+                            'customer' => $r->customer ? $r->customer->name : 'Anonymous',
+                            'date' => $r->created_at ? $r->created_at->format('M d, Y') : '',
+                        ];
+                    })->values()
+                ]];
+            });
+        @endphp
+        const handymenReviews = @json($reviewsData);
+
+        window.openReviewsModal = function(userId) {
+            const data = handymenReviews[userId];
+            if (!data) return;
+            document.getElementById('reviewsModalTitle').textContent = data.name + ' — Reviews';
+            const avgEl = document.getElementById('reviewsModalAvg');
+            if (data.count > 0) {
+                avgEl.innerHTML = `<span class="stars">★ ${parseFloat(data.avg).toFixed(1)}</span> · ${data.count} review${data.count > 1 ? 's' : ''}`;
+            } else {
+                avgEl.innerHTML = '';
+            }
+            const content = document.getElementById('reviewsModalContent');
+            if (data.reviews.length === 0) {
+                content.innerHTML = '<div class="no-reviews-msg">No reviews yet for this professional.</div>';
+            } else {
+                content.innerHTML = data.reviews.map(r => `
+                    <div class="review-item">
+                        <div class="review-header">
+                            <span class="review-author">${r.customer}</span>
+                            <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+                        </div>
+                        ${r.feedback ? `<p class="review-text">${r.feedback}</p>` : '<p class="review-text" style="font-style:italic;">No written feedback.</p>'}
+                        <div class="review-date">${r.date}</div>
+                    </div>
+                `).join('');
+            }
+            document.getElementById('reviewsModal').classList.add('show');
+        };
+
+        window.closeReviewsModal = function() {
+            document.getElementById('reviewsModal').classList.remove('show');
+        };
+
+        document.getElementById('reviewsModal').addEventListener('click', function(e) {
+            if (e.target === this) closeReviewsModal();
         });
     </script>
 </body>

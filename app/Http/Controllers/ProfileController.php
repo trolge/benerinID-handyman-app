@@ -58,6 +58,13 @@ class ProfileController extends Controller
                 $cleanTags = array_values(array_filter(array_map('trim', $rawTags)));
                 $user->Tags = json_encode($cleanTags);
             }
+
+            if ($request->has('WorkingHoursStart')) {
+                $user->WorkingHoursStart = $request->WorkingHoursStart;
+            }
+            if ($request->has('WorkingHoursEnd')) {
+                $user->WorkingHoursEnd = $request->WorkingHoursEnd;
+            }
         }
 
         $user->save();

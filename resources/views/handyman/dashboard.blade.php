@@ -254,7 +254,8 @@
         $pendingRequests = $jobs->where('JobStatus', 'pending')->sortBy('JobStartDate');
 
         
-        $userRating = auth()->user()->rating ? number_format(auth()->user()->rating, 1) : '5.0';
+        $avgRatingFromReviews = \App\Models\Rating::where('HandymanID', auth()->user()->UserID)->avg('Rating');
+        $userRating = $avgRatingFromReviews ? number_format($avgRatingFromReviews, 1) : '0.0';
         
         // Filter schedule for today
         $todayStart = now()->startOfDay();
@@ -287,7 +288,7 @@
                 <a href="{{ route('dashboard') }}" class="active">Dashboard</a>
                 <a href="{{ route('history.index') }}">Jobs</a>
                 <a href="#">Earnings</a>
-                <a href="#">Messages</a>
+                <a href="{{ route('chat.index') }}">Messages</a>
                 <a href="#">Payments</a>
             </div>
         </div>
@@ -422,8 +423,10 @@
                                     <div class="s-info">
                                         <div class="s-title">{{ $job->JobType ?: $job->JobName }}</div>
                                         <div class="s-meta">
-                                            <span>{{ $job->customer ? $job->customer->name : 'Client' }}</span> •
-                                            <span style="color:var(--primary);">{{ $job->JobImages ? count((array)$job->JobImages).' photo(s)' : 'No photos' }}</span>
+                                            <span>{{ $job->customer ? $job->customer->name : 'Client' }}</span>
+                                            @if($job->JobImages && count((array)$job->JobImages) > 0)
+                                                • <span style="color:var(--primary);">{{ count((array)$job->JobImages) }} photo(s)</span>
+                                            @endif
                                         </div>
                                     </div>
                                     <div style="display:flex; align-items:center; gap:0.5rem; color: var(--primary); font-size:0.8rem; font-weight:600; flex-shrink:0;">
@@ -448,25 +451,39 @@
                                 <option>Last 30 Days</option>
                             </select>
                         </div>
+                        @php
+                            // Calculate daily earnings for the last 7 days
+                            $dayLabels = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+                            $todayDayOfWeek = now()->dayOfWeekIso; // 1=Mon, 7=Sun
+                            $dailyEarnings = [];
+                            for ($d = 6; $d >= 0; $d--) {
+                                $date = now()->subDays($d);
+                                $dayIdx = $date->dayOfWeekIso; // 1=Mon .. 7=Sun
+                                $earned = $completedJobs->filter(function($job) use ($date) {
+                                    return $job->updated_at && \Carbon\Carbon::parse($job->updated_at)->isSameDay($date);
+                                })->sum('JobPrice');
+                                $dailyEarnings[] = [
+                                    'label' => $dayLabels[$dayIdx - 1],
+                                    'amount' => $earned,
+                                    'isToday' => $d === 0,
+                                ];
+                            }
+                            $maxEarning = max(array_column($dailyEarnings, 'amount'));
+                        @endphp
                         <div class="chart-placeholder">
                             <div class="css-chart">
-                                <!-- Dummy CSS bars for visual proxy -->
-                                <div class="chart-bar" style="height: 0%;"></div>
-                                <div class="chart-bar" style="height: 0%;"></div>
-                                <div class="chart-bar" style="height: 0%;"></div>
-                                <div class="chart-bar" style="height: 0%;"></div>
-                                <div class="chart-bar" style="height: 0%;"></div>
-                                <div class="chart-bar" style="height: 0%; background: var(--primary);"></div>
-                                <div class="chart-bar" style="height: 0%;"></div>
+                                @foreach($dailyEarnings as $day)
+                                    @php
+                                        $pct = $maxEarning > 0 ? round(($day['amount'] / $maxEarning) * 100) : 0;
+                                        $minHeight = $day['amount'] > 0 ? max($pct, 10) : 5;
+                                    @endphp
+                                    <div class="chart-bar" style="height: {{ $minHeight }}%;{{ $day['isToday'] ? ' background: var(--primary);' : '' }}"></div>
+                                @endforeach
                             </div>
                             <div class="chart-labels">
-                                <span class="chart-label">MON</span>
-                                <span class="chart-label">TUE</span>
-                                <span class="chart-label">WED</span>
-                                <span class="chart-label">THU</span>
-                                <span class="chart-label">FRI</span>
-                                <span class="chart-label active">SAT</span>
-                                <span class="chart-label">SUN</span>
+                                @foreach($dailyEarnings as $day)
+                                    <span class="chart-label{{ $day['isToday'] ? ' active' : '' }}">{{ $day['label'] }}</span>
+                                @endforeach
                             </div>
                         </div>
                     </div>
@@ -476,21 +493,7 @@
                 <!-- Right Column -->
                 <div class="right-col">
                     
-                    <button class="action-btn btn-blue">
-                        <div class="action-left">
-                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                            New Invoice
-                        </div>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                    </button>
-                    
-                    <button class="action-btn btn-light">
-                        <div class="action-left">
-                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                            Update Schedule
-                        </div>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                    </button>
+
 
                     <a href="{{ route('history.index') }}" style="display:block; margin-bottom: 0.5rem;">
                         <button class="action-btn btn-light" style="width:100%;">
@@ -518,7 +521,11 @@
                                         </div>
                                         <span class="fb-time">{{ $fb->created_at->diffForHumans(null, true, true) }} AGO</span>
                                     </div>
-                                    <p class="fb-text">"{{ $fb->feedback ?? 'Very professional and fast service.' }}"</p>
+                                    @if($fb->feedback)
+                                        <p class="fb-text">"{{ $fb->feedback }}"</p>
+                                    @else
+                                        <p class="fb-text" style="color:var(--text-muted); font-style:normal;">No comment provided.</p>
+                                    @endif
                                     <span class="fb-author">— {{ $fb->customer ? $fb->customer->name : 'Customer' }}</span>
                                 </div>
                             @empty
@@ -527,8 +534,9 @@
                                 </div>
                             @endforelse
                         </div>
-                        @if($recentFeedback->count() > 0)
-                        <button class="btn-ghost" style="position: absolute; bottom: 0; background: white; border-radius: 0 0 16px 16px;">Read All 129 Reviews</button>
+                        @php $totalReviews = \App\Models\Rating::where('HandymanID', auth()->user()->UserID)->count(); @endphp
+                        @if($totalReviews > 0)
+                        <button class="btn-ghost" style="position: absolute; bottom: 0; background: white; border-radius: 0 0 16px 16px;" onclick="openAllReviewsModal()">Read All {{ $totalReviews }} Review{{ $totalReviews !== 1 ? 's' : '' }}</button>
                         @endif
                     </div>
 
@@ -624,6 +632,10 @@
                 </div>
                 <div class="modal-desc" id="modalDesc">No description provided.</div>
                 <div class="modal-actions" id="modalActions"></div>
+                <button class="btn-message" id="pendingModalMessageBtn" style="margin-top:1rem; width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem; background:#f3f4f6; color:var(--primary); padding:0.75rem 0.85rem; border:none; border-radius:12px; font-weight:700; cursor:pointer;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                    Message Client
+                </button>
             </div>
         </div>
     </div>
@@ -657,7 +669,20 @@
                     </div>
                 </div>
                 <p style="font-size:0.65rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:0.5rem;">Description</p>
-                <div class="modal-desc" id="calModalDesc">No description provided.</div>
+                <div class="modal-desc" id="calModalDesc" style="margin-bottom:1.5rem;">No description provided.</div>
+
+                <div id="calModalInvoiceWrap" style="display:none; margin-bottom:1.5rem; background: var(--bg-page); border-radius: 12px; padding: 1.25rem; border: 1px solid var(--border-color);">
+                    <p style="font-size:0.65rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:0.75rem;">Itemized Invoice Charges</p>
+                    <div id="calModalInvoiceItems" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+                    <div style="margin-top: 0.75rem; border-top: 1px dashed var(--border-color); padding-top: 0.5rem; display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 0.9rem;">
+                        <span style="color: var(--text-muted);">Total Billed:</span>
+                        <span id="calModalInvoiceTotal" style="color: var(--success); font-size: 1.1rem;">$0.00</span>
+                    </div>
+                </div>
+                <button class="btn-message" id="calModalMessageBtn" style="margin-top:1rem; width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem; background:var(--primary); color:white; padding:0.75rem 0.85rem; border:none; border-radius:12px; font-weight:700; cursor:pointer;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:white;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                    Message Client
+                </button>
             </div>
         </div>
     </div>
@@ -665,6 +690,68 @@
     <!-- Image Lightbox -->
     <div id="lightbox" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:2000; align-items:center; justify-content:center; cursor:zoom-out;" onclick="this.style.display='none'">
         <img id="lightboxImg" src="" style="max-width:90vw; max-height:90vh; border-radius:8px; object-fit:contain;">
+    </div>
+
+    <!-- All Reviews Modal -->
+    @php
+        $allReviews = \App\Models\Rating::with(['customer', 'job'])
+            ->where('HandymanID', auth()->user()->UserID)
+            ->latest()
+            ->get();
+    @endphp
+    <div class="modal-overlay" id="allReviewsModal">
+        <div class="modal-box" style="max-width:520px;">
+            <div class="modal-head">
+                <div>
+                    <h3>All Reviews</h3>
+                    <p style="font-size:0.8rem; color:var(--text-muted); font-weight:500; margin-top:0.15rem;">{{ $allReviews->count() }} review{{ $allReviews->count() !== 1 ? 's' : '' }} • {{ $userRating }} avg</p>
+                </div>
+                <div class="modal-close" onclick="closeAllReviewsModal()">✕</div>
+            </div>
+            <div class="modal-body" style="padding:0;">
+                <div style="display:flex; flex-direction:column; max-height:60vh; overflow-y:auto;">
+                    @forelse($allReviews as $review)
+                        <div style="padding:1.25rem 1.5rem; border-bottom:1px solid var(--border-color); {{ $loop->last ? 'border-bottom:none;' : '' }}">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                                <div style="display:flex; align-items:center; gap:0.75rem;">
+                                    <div style="width:36px; height:36px; border-radius:50%; background:#e2e8f0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem; color:var(--text-muted); flex-shrink:0; overflow:hidden;">
+                                        @if($review->customer && $review->customer->avatar)
+                                            <img src="{{ asset('storage/' . $review->customer->avatar) }}" style="width:100%;height:100%;object-fit:cover;">
+                                        @else
+                                            {{ $review->customer ? substr($review->customer->name, 0, 1) : '?' }}
+                                        @endif
+                                    </div>
+                                    <div>
+                                        <div style="font-weight:700; font-size:0.9rem;">{{ $review->customer ? $review->customer->name : 'Customer' }}</div>
+                                        <div style="font-size:0.7rem; color:var(--text-muted); font-weight:500;">{{ $review->created_at->diffForHumans() }}</div>
+                                    </div>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:0.15rem; color:#f59e0b;">
+                                    @for($i = 0; $i < (int)$review->Rating; $i++)
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                    @endfor
+                                    @for($i = (int)$review->Rating; $i < 5; $i++)
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="#e2e8f0"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                    @endfor
+                                </div>
+                            </div>
+                            @if($review->feedback)
+                                <p style="font-size:0.875rem; color:#374151; line-height:1.6; font-style:italic; margin-top:0.35rem;">"{{ $review->feedback }}"</p>
+                            @else
+                                <p style="font-size:0.825rem; color:var(--text-muted); margin-top:0.35rem;">No comment provided.</p>
+                            @endif
+                            @if($review->job)
+                                <div style="margin-top:0.5rem; font-size:0.7rem; font-weight:600; color:var(--text-muted); background:var(--bg-page); display:inline-block; padding:0.25rem 0.6rem; border-radius:6px;">
+                                    {{ $review->job->JobType ?? $review->job->JobName }}
+                                </div>
+                            @endif
+                        </div>
+                    @empty
+                        <div style="padding:3rem; text-align:center; color:var(--text-muted); font-weight:500;">No reviews yet.</div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
     </div>
 
 <script>
@@ -724,6 +811,13 @@ document.addEventListener('DOMContentLoaded', () => {
             </form>
         `;
 
+        const pendingMessageBtn = document.getElementById('pendingModalMessageBtn');
+        if (pendingMessageBtn) {
+            pendingMessageBtn.onclick = function() {
+                window.location.href = `/messages?job=${job.JobID}`;
+            };
+        }
+
         document.getElementById('jobModal').classList.add('active');
         document.body.style.overflow = 'hidden';
     };
@@ -772,6 +866,52 @@ document.addEventListener('DOMContentLoaded', () => {
             photosWrap.style.display = 'none';
         }
 
+        // Populating Billed Invoice Items in modal
+        const invoiceWrap = document.getElementById('calModalInvoiceWrap');
+        const invoiceItemsContainer = document.getElementById('calModalInvoiceItems');
+        const invoiceTotalEl = document.getElementById('calModalInvoiceTotal');
+        invoiceItemsContainer.innerHTML = '';
+
+        const invoiceItems = Array.isArray(job.InvoiceItems) ? job.InvoiceItems : (job.InvoiceItems ? JSON.parse(job.InvoiceItems) : []);
+        if (invoiceItems && invoiceItems.length > 0) {
+            invoiceWrap.style.display = 'block';
+            invoiceItems.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.style.display = 'flex';
+                itemDiv.style.justify = 'space-between';
+                itemDiv.style.alignItems = 'center';
+                itemDiv.style.fontSize = '0.85rem';
+                itemDiv.innerHTML = `
+                    <span style="color: var(--text-dark); font-weight: 500;">${item.name}</span>
+                    <span style="color: var(--text-dark); font-weight: 700;">$${parseFloat(item.price).toFixed(2)}</span>
+                `;
+                invoiceItemsContainer.appendChild(itemDiv);
+            });
+            invoiceTotalEl.textContent = '$' + parseFloat(job.JobPrice || 0).toFixed(2);
+        } else if (job.JobStatus === 'finished' && job.JobPrice) {
+            invoiceWrap.style.display = 'block';
+            const itemDiv = document.createElement('div');
+            itemDiv.style.display = 'flex';
+            itemDiv.style.justify = 'space-between';
+            itemDiv.style.alignItems = 'center';
+            itemDiv.style.fontSize = '0.85rem';
+            itemDiv.innerHTML = `
+                <span style="color: var(--text-dark); font-weight: 500;">Flat Rate / General Service Charge</span>
+                <span style="color: var(--text-dark); font-weight: 700;">$${parseFloat(job.JobPrice).toFixed(2)}</span>
+            `;
+            invoiceItemsContainer.appendChild(itemDiv);
+            invoiceTotalEl.textContent = '$' + parseFloat(job.JobPrice).toFixed(2);
+        } else {
+            invoiceWrap.style.display = 'none';
+        }
+
+        const messageBtn = document.getElementById('calModalMessageBtn');
+        if (messageBtn) {
+            messageBtn.onclick = function() {
+                window.location.href = `/messages?job=${job.JobID}`;
+            };
+        }
+
         document.getElementById('calJobModal').classList.add('active');
         document.body.style.overflow = 'hidden';
     };
@@ -783,6 +923,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('calJobModal').addEventListener('click', function(e) {
         if (e.target === this) closeCalJobModal();
+    });
+
+    // All Reviews Modal
+    window.openAllReviewsModal = function() {
+        document.getElementById('allReviewsModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    };
+
+    window.closeAllReviewsModal = function() {
+        document.getElementById('allReviewsModal').classList.remove('active');
+        document.body.style.overflow = '';
+    };
+
+    document.getElementById('allReviewsModal').addEventListener('click', function(e) {
+        if (e.target === this) closeAllReviewsModal();
     });
 
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -919,30 +1074,137 @@ document.addEventListener('DOMContentLoaded', () => {
                 </form>`;
             } else if(jobStatus === 'inspection') {
                 actionHtml = `
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <!-- Decline Job Form -->
+                    <form method="POST" action="/jobs/${job.JobID}/status" style="margin:0;">
+                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="status" value="cancelled">
+                        <button type="submit" class="btn-decline" style="width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem; background:#fee2e2; color:#ef4444; border:1px solid #fecaca; padding: 0.75rem; border-radius: 12px; font-weight:700; cursor:pointer; transition: all 0.2s;" onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">
+                            ✕ Decline / Unable to Perform Work
+                        </button>
+                    </form>
+
+                    <!-- Estimation Form Builder -->
+                    <form id="invoice-form-${job.JobID}" method="POST" action="/jobs/${job.JobID}/status" style="margin:0; background: var(--bg-sidebar); padding: 1.25rem; border-radius: 16px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 1rem;">
+                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="status" value="awaiting_approval">
+                        
+                        <div>
+                            <span style="display:block; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform:uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Invoice / Estimation Details</span>
+                            <div id="invoice-items-${job.JobID}" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <!-- Dynamic rows here -->
+                            </div>
+                            <button type="button" onclick="addInvoiceItem(${job.JobID})" style="margin-top: 0.75rem; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.35rem; padding: 0.6rem; background: var(--primary-light); color: var(--primary); border: none; border-radius: 10px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Add Labor / Materials Item
+                            </button>
+                        </div>
+
+                        <div style="border-top: 1px dashed var(--border-color); padding-top: 0.75rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: var(--text-dark);">
+                                <span style="font-size: 0.85rem;">Total Amount:</span>
+                                <div style="display: flex; align-items: center; gap: 0.25rem;">
+                                    <span style="font-size: 1.1rem; font-weight: 800; color: var(--primary);">$</span>
+                                    <input type="number" id="invoice-total-${job.JobID}" name="JobPrice" readonly required min="0" step="0.01" style="width: 100px; padding: 0.35rem 0.5rem; border: 1px solid var(--border-color); border-radius: 8px; font-weight: 800; color: var(--primary); font-size: 1.1rem; background: var(--bg-page); text-align: right;" value="0.00">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn-message" style="margin:0; width:100%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.85rem; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(26, 86, 219, 0.2);">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                            Send to Customer
+                        </button>
+                    </form>
+                </div>`;
+            } else if(jobStatus === 'awaiting_approval') {
+                let itemsHtml = '';
+                const items = Array.isArray(job.InvoiceItems) ? job.InvoiceItems : (job.InvoiceItems ? JSON.parse(job.InvoiceItems) : []);
+                if (items && items.length > 0) {
+                    let total = 0;
+                    items.forEach(i => total += parseFloat(i.price || 0));
+                    itemsHtml = `
+                    <div style="margin-top: 1rem; margin-bottom: 1rem; background: var(--bg-sidebar); padding: 1.25rem; border-radius: 16px; border: 1px solid var(--border-color);">
+                        <span style="display:block; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform:uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">Estimated Charges</span>
+                        <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                            ${items.map(item => `
+                                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;">
+                                    <span style="color: var(--text-dark); font-weight: 500;">${item.name}</span>
+                                    <span style="color: var(--text-dark); font-weight: 700;">$${parseFloat(item.price).toFixed(2)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div style="margin-top: 0.75rem; border-top: 1px dashed var(--border-color); padding-top: 0.5rem;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; font-weight:800; color:var(--text-dark); font-size:0.9rem;">
+                                <span>Total Amount:</span>
+                                <span style="color:var(--primary); font-size:1.1rem;">$${total.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>`;
+                }
+                actionHtml = `
+                ${itemsHtml}
+                <div style="padding:1.25rem; background: #fffbeb; border:1px solid #fef3c7; border-radius:12px; font-size:0.85rem; color:#b45309; text-align:center; font-weight:600; display:flex; flex-direction:column; gap:0.25rem;">
+                    <span>Awaiting Customer Approval</span>
+                    <span style="font-size:0.75rem; font-weight:500; color:#d97706;">Estimation sent. Awaiting agree/decline response.</span>
+                </div>`;
+            } else if(jobStatus === 'repairing') {
+                let itemsHtml = '';
+                const items = Array.isArray(job.InvoiceItems) ? job.InvoiceItems : (job.InvoiceItems ? JSON.parse(job.InvoiceItems) : []);
+                if (items && items.length > 0) {
+                    let total = 0;
+                    items.forEach(i => total += parseFloat(i.price || 0));
+                    itemsHtml = `
+                    <div style="margin-top: 1rem; margin-bottom: 1rem; background: var(--bg-sidebar); padding: 1.25rem; border-radius: 16px; border: 1px solid var(--border-color);">
+                        <span style="display:block; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform:uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">Agreed Estimation Charges</span>
+                        <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                            ${items.map(item => `
+                                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;">
+                                    <span style="color: var(--text-dark); font-weight: 500;">${item.name}</span>
+                                    <span style="color: var(--text-dark); font-weight: 700;">$${parseFloat(item.price).toFixed(2)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div style="margin-top: 0.75rem; border-top: 1px dashed var(--border-color); padding-top: 0.5rem;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; font-weight:800; color:var(--text-dark); font-size:0.9rem;">
+                                <span>Total Amount:</span>
+                                <span style="color:var(--primary); font-size:1.1rem;">$${total.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>`;
+                }
+                actionHtml = `
+                ${itemsHtml}
                 <form method="POST" action="/jobs/${job.JobID}/status" style="margin:0;">
                     <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="status" value="repairing">
-                    <button type="submit" class="btn-message" style="background:#3b82f6; color:white;">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
-                        Begin Repairing
-                    </button>
-                </form>`;
-            } else if(jobStatus === 'repairing') {
-                actionHtml = `
-                <form method="POST" action="/jobs/${job.JobID}/status" style="margin:0; background: var(--bg-sidebar); padding: 1rem; border-radius: 12px; border: 1px solid var(--border-color);">
-                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="status" value="finished">
-                    <div style="margin-bottom: 0.75rem;">
-                        <label style="display:block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform:uppercase; margin-bottom: 0.25rem;">Final Invoice Amount ($)</label>
-                        <input type="number" name="JobPrice" required min="0" step="0.01" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-weight: 700; color: var(--text-dark); background: white;" placeholder="e.g. 150">
-                    </div>
-                    <button type="submit" class="btn-message btn-invoice" style="margin:0; width:100%;">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                        Complete Job & Bill Client
+                    <button type="submit" class="btn-message" style="margin:0; width:100%; background: var(--success); color: white; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.85rem; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);">
+                        ✓ Mark Job Completed
                     </button>
                 </form>`;
             } else if(jobStatus === 'finished') {
-                actionHtml = `<div style="padding:1rem; background: #f0fdf4; border-radius:12px; font-size:0.85rem; color:#166534; text-align:center; font-weight:600;">Job completely documented and paid.</div>`;
+                let itemsHtml = '';
+                const items = Array.isArray(job.InvoiceItems) ? job.InvoiceItems : (job.InvoiceItems ? JSON.parse(job.InvoiceItems) : []);
+                if (items && items.length > 0) {
+                    itemsHtml = `
+                    <div style="margin-top: 1rem; margin-bottom: 1rem; background: var(--bg-sidebar); padding: 1.25rem; border-radius: 16px; border: 1px solid var(--border-color);">
+                        <span style="display:block; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform:uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">Billed Invoice Items</span>
+                        <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                            ${items.map(item => `
+                                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;">
+                                    <span style="color: var(--text-dark); font-weight: 500;">${item.name}</span>
+                                    <span style="color: var(--text-dark); font-weight: 700;">$${parseFloat(item.price).toFixed(2)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div style="margin-top: 0.75rem; border-top: 1px dashed var(--border-color); padding-top: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.85rem; font-weight: 800; color: var(--text-dark);">Total Billed:</span>
+                            <span style="font-size: 1.1rem; font-weight: 800; color: var(--success);">$${parseFloat(job.JobPrice).toFixed(2)}</span>
+                        </div>
+                    </div>`;
+                }
+                actionHtml = `
+                ${itemsHtml}
+                <div style="padding:1rem; background: #f0fdf4; border-radius:12px; font-size:0.85rem; color:#166534; text-align:center; font-weight:600;">Job completely documented and paid.</div>`;
             }
 
             html += `
@@ -994,7 +1256,68 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         });
         jobDetailsContent.innerHTML = html;
+
+        // Auto-initialize itemized list for any inspection jobs displayed
+        dayJobs.forEach(job => {
+            if (job.JobStatus === 'inspection') {
+                addInvoiceItem(job.JobID);
+            }
+        });
     }
+
+    window.addInvoiceItem = function(jobId, name = '', price = '') {
+        const container = document.getElementById(`invoice-items-${jobId}`);
+        if (!container) return;
+
+        const rowCount = container.children.length;
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.gap = '0.5rem';
+        row.style.alignItems = 'center';
+        row.style.minWidth = '0';
+        row.innerHTML = `
+            <input type="text" name="InvoiceItems[${rowCount}][name]" required style="flex: 1; min-width: 0; padding: 0.5rem 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.85rem; color: var(--text-dark); background: white;" placeholder="Item description" value="${name}">
+            <input type="number" name="InvoiceItems[${rowCount}][price]" required min="0" step="0.01" style="width: 70px; flex-shrink: 0; padding: 0.5rem 0.5rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.85rem; font-weight: 700; color: var(--text-dark); background: white; text-align: right;" placeholder="Price" value="${price}" oninput="calculateInvoiceTotal(${jobId})">
+            <button type="button" onclick="removeInvoiceItem(this, ${jobId})" style="flex-shrink: 0; width: 32px; height: 32px; padding: 0; color: #ef4444; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; background: #fef2f2; border: 1px solid #fee2e2; transition: all 0.2s;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+            </button>
+        `;
+        container.appendChild(row);
+        calculateInvoiceTotal(jobId);
+    };
+
+    window.removeInvoiceItem = function(btn, jobId) {
+        const row = btn.parentElement;
+        row.remove();
+        calculateInvoiceTotal(jobId);
+        
+        // Re-index remaining inputs
+        const container = document.getElementById(`invoice-items-${jobId}`);
+        Array.from(container.children).forEach((child, index) => {
+            const inputs = child.querySelectorAll('input');
+            if (inputs.length === 2) {
+                inputs[0].name = `InvoiceItems[${index}][name]`;
+                inputs[1].name = `InvoiceItems[${index}][price]`;
+            }
+        });
+    };
+
+    window.calculateInvoiceTotal = function(jobId) {
+        const container = document.getElementById(`invoice-items-${jobId}`);
+        const totalInput = document.getElementById(`invoice-total-${jobId}`);
+        if (!container) return;
+
+        let total = 0;
+        const priceInputs = container.querySelectorAll('input[type="number"]');
+        priceInputs.forEach(input => {
+            const val = parseFloat(input.value);
+            if (!isNaN(val) && val > 0) {
+                total += val;
+            }
+        });
+
+        if (totalInput) totalInput.value = total.toFixed(2);
+    };
 
     const dayNamesFull = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 

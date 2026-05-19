@@ -8,7 +8,7 @@ class Rating extends Model
 {
     protected $primaryKey = 'RatingID';
 
-    protected $fillable = ['Rating', 'JobID', 'HandymanID', 'CustomerID'];
+    protected $fillable = ['Rating', 'feedback', 'JobID', 'HandymanID', 'CustomerID'];
 
     // CRC Methods
     public static function rateHandyman($data)

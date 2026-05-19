@@ -2,7 +2,9 @@
     "agents": [
         "claude_code"
     ],
-    "mcp": true,
-    "nightwatch_mcp": false,
-    "sail": false
+    "cloud": true,
+    "skills": [
+        "laravel-best-practices",
+        "tailwindcss-development"
+    ]
 }
