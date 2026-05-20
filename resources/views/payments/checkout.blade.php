@@ -543,42 +543,78 @@
                 </div>
             </div>
 
+     
             <div>
-                <span class="section-label">Payment Method</span>
-                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                    <div class="payment-method-card">
-                        <div class="card-selector">
-                            <div class="card-icon">VISA</div>
-                            <div class="card-details">
-                                <span class="card-number">Visa ending in 4242</span>
-                                <span class="card-expiry">Expires 12/26</span>
-                            </div>
-                        </div>
-                        <div class="check-circle">
-                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        </div>
-                    </div>
+    <span class="section-label">Payment Method</span>
 
-                    <div class="add-method-btn">
-                        <span>Add New Method</span>
-                        <div class="add-icon">+</div>
+    <form method="POST" action="{{ route('payments.process', $job->JobID) }}">
+        @csrf
+
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+
+            <label class="payment-method-card">
+                <div class="card-selector">
+                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                        <input type="radio" name="payment_method" value="visa" checked>
+                        <div class="card-details">
+                            <span class="card-number">Visa / Credit Card</span>
+                            <span class="card-expiry">Secure online payment</span>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </label>
 
-            <form method="POST" action="{{ route('payments.process', $job->JobID) }}">
-                @csrf
-                <button type="submit" class="pay-btn">
-                    Pay ${{ number_format($total, 2) }}
-                </button>
-            </form>
+            <label class="payment-method-card">
+                <div class="card-selector">
+                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                        <input type="radio" name="payment_method" value="bank_transfer">
+                        <div class="card-details">
+                            <span class="card-number">Bank Transfer</span>
+                            <span class="card-expiry">BCA / Mandiri / BNI</span>
+                        </div>
+                    </div>
+                </div>
+            </label>
 
-            <div class="ssl-text">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                SSL SECURE PAYMENT
-            </div>
+            <label class="payment-method-card">
+                <div class="card-selector">
+                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                        <input type="radio" name="payment_method" value="ewallet">
+                        <div class="card-details">
+                            <span class="card-number">E-Wallet</span>
+                            <span class="card-expiry">GoPay / OVO / DANA</span>
+                        </div>
+                    </div>
+                </div>
+            </label>
+
+            <label class="payment-method-card">
+                <div class="card-selector">
+                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                        <input type="radio" name="payment_method" value="cash">
+                        <div class="card-details">
+                            <span class="card-number">Cash Payment</span>
+                            <span class="card-expiry">Pay directly to handyman</span>
+                        </div>
+                    </div>
+                </div>
+            </label>
+
         </div>
+
+        <button type="submit" class="pay-btn" style="margin-top: 1.5rem;">
+            Pay ${{ number_format($total, 2) }}
+        </button>
+    </form>
+
+    <div class="ssl-text">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        SSL SECURE PAYMENT
     </div>
+</div>
 
     <script>
         function setRating(r) {
