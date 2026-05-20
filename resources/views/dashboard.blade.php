@@ -836,7 +836,8 @@
                     <div
                         style="padding: 0.5rem 1rem; border-bottom: 1px solid var(--border-color); margin-bottom: 0.5rem;">
                         <p style="font-weight: 700; font-size: 0.9rem; color: var(--text-dark);">
-                            {{ auth()->check() ? auth()->user()->name : 'User Profile' }}</p>
+                            {{ auth()->check() ? auth()->user()->name : 'User Profile' }}
+                        </p>
                         <p style="font-size: 0.75rem; color: var(--text-muted);">{{ auth()->check() ?
                             auth()->user()->email : 'user@example.com' }}</p>
                     </div>
@@ -1253,7 +1254,7 @@
                             </div>`;
                         }
                         actionHtml = itemsHtml;
-                        
+
                         if (jobStatus === 'finished') {
                             actionHtml += `
                             <a href="/payments" style="display:block; text-decoration:none; margin-top: 1rem; margin-bottom: 1.5rem;">

@@ -136,11 +136,19 @@
                 benerin<span>.id</span>
             </a>
             <div class="nav-links">
-                <a href="{{ route('dashboard') }}">Dashboard</a>
-                <a href="{{ route('history.index') }}">Jobs</a>
-                <a href="#">Earnings</a>
-                <a href="{{ route('chat.index') }}" class="active">Messages</a>
-                <a href="{{ route('payments.index') }}">Payments</a>
+                @if(auth()->check() && auth()->user()->Role === 'handyman')
+                    <a href="{{ route('dashboard') }}">Dashboard</a>
+                    <a href="{{ route('history.index') }}">Jobs</a>
+                    <a href="#">Earnings</a>
+                    <a href="{{ route('chat.index') }}" class="active">Messages</a>
+                    <a href="{{ route('payments.index') }}">Payments</a>
+                @else
+                    <a href="{{ route('dashboard') }}">Dashboard</a>
+                    <a href="{{ route('services.index') }}">Services</a>
+                    <a href="{{ route('professionals.index') }}">Professionals</a>
+                    <a href="{{ route('chat.index') }}" class="active">Messages</a>
+                    <a href="{{ route('payments.index') }}">Payments</a>
+                @endif
             </div>
         </div>
         <div class="nav-right">

@@ -535,6 +535,8 @@
                 <a href="{{ route('dashboard') }}">Dashboard</a>
                 <a href="{{ route('services.index') }}">Services</a>
                 <a href="{{ route('professionals.index') }}">Professionals</a>
+                <a href="{{ route('chat.index') }}">Messages</a>
+                <a href="{{ route('payments.index') }}">Payments</a>
             </div>
         </div>
     </nav>

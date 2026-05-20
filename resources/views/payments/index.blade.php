@@ -320,11 +320,19 @@
         <div class="nav-left">
             <a href="{{ route('dashboard') }}" class="brand">benerin<span>id</span></a>
             <div class="nav-links">
-                <a href="{{ route('dashboard') }}">Dashboard</a>
-                <a href="{{ route('services.index') }}">Services</a>
-                <a href="{{ route('professionals.index') }}">Professionals</a>
-                <a href="#">Messages</a>
-                <a href="{{ route('payments.index') }}" class="active">Payments</a>
+                @if(auth()->check() && auth()->user()->Role === 'handyman')
+                    <a href="{{ route('dashboard') }}">Dashboard</a>
+                    <a href="{{ route('history.index') }}">Jobs</a>
+                    <a href="#">Earnings</a>
+                    <a href="{{ route('chat.index') }}">Messages</a>
+                    <a href="{{ route('payments.index') }}" class="active">Payments</a>
+                @else
+                    <a href="{{ route('dashboard') }}">Dashboard</a>
+                    <a href="{{ route('services.index') }}">Services</a>
+                    <a href="{{ route('professionals.index') }}">Professionals</a>
+                    <a href="{{ route('chat.index') }}">Messages</a>
+                    <a href="{{ route('payments.index') }}" class="active">Payments</a>
+                @endif
             </div>
         </div>
     </nav>
