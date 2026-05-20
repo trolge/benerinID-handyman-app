@@ -212,8 +212,7 @@
                 </div>
             </div>
             <div>
-                <!-- Placeholder for Hero Image -->
-                <div class="hero-image"></div>
+                <div class="hero-image" style="background-image: url('{{ asset('images/hero.png') }}'); background-size: cover; background-position: center;"></div>
             </div>
         </section>
 
