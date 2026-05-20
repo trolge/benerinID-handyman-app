@@ -16,7 +16,7 @@
             --text-muted: #64748b;
             --text-light: #94a3b8;
             --bg-page: #f8fafc;
-            --border-color: #f1f5f9;
+            --border-color: #e2e8f0;
             --input-bg: #f1f5f9;
         }
 
@@ -25,118 +25,138 @@
         a { text-decoration: none; color: inherit; }
         button, input { border: none; outline: none; background: none; font-family: inherit; }
 
-        .mobile-container { width: 100%; max-width: 480px; background: #ffffff; min-height: 100vh; position: relative; padding-bottom: 2rem; }
+        .main-container { width: 100%; max-width: 1200px; margin: 0 auto; min-height: 100vh; position: relative; padding: 2rem 1.5rem; }
 
         /* Header */
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 1.5rem 1.25rem; background: white; position: sticky; top: 0; z-index: 50;}
-        .header h1 { font-size: 1.05rem; font-weight: 800; color: var(--primary); }
-        .icon-btn { color: var(--primary); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .header h1 { font-size: 1.75rem; font-weight: 800; color: var(--text-dark); }
+        .icon-btn { color: var(--text-muted); display: flex; align-items: center; justify-content: center; cursor: pointer; background: white; padding: 0.75rem; border-radius: 12px; border: 1px solid var(--border-color); transition: all 0.2s; }
+        .icon-btn:hover { background: var(--primary-light); color: var(--primary); border-color: var(--primary-light); }
 
-        .content { padding: 0 1.5rem; }
+        /* Controls Row */
+        .controls-row { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
+        @media(min-width: 768px) {
+            .controls-row { flex-direction: row; align-items: center; justify-content: space-between; }
+        }
 
         /* Search */
-        .search-container { position: relative; margin-bottom: 1.25rem; }
-        .search-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-light); }
-        .search-input { width: 100%; padding: 0.85rem 1rem 0.85rem 3rem; background: var(--input-bg); border-radius: 12px; font-size: 0.95rem; font-weight: 500; color: var(--text-dark); border: 1px solid transparent; transition: border-color 0.2s;}
-        .search-input:focus { border-color: var(--primary); background: white; }
+        .search-container { position: relative; width: 100%; max-width: 400px; }
+        .search-icon { position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%); color: var(--text-light); }
+        .search-input { width: 100%; padding: 0.85rem 1rem 0.85rem 3.5rem; background: white; border-radius: 12px; font-size: 0.95rem; font-weight: 500; color: var(--text-dark); border: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.02); transition: all 0.2s;}
+        .search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); outline: none; }
         .search-input::placeholder { color: var(--text-light); }
 
         /* Toggles */
-        .toggle-container { display: flex; background: var(--input-bg); border-radius: 12px; padding: 0.25rem; margin-bottom: 1.5rem; }
-        .toggle-btn { flex: 1; padding: 0.65rem 0; text-align: center; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); border-radius: 10px; cursor: pointer; transition: all 0.2s; }
-        .toggle-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .toggle-container { display: flex; background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 0.35rem; width: fit-content; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+        .toggle-btn { padding: 0.65rem 1.5rem; text-align: center; font-size: 0.85rem; font-weight: 700; color: var(--text-muted); border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+        .toggle-btn.active { background: var(--primary-light); color: var(--primary); }
 
         /* Job Cards */
-        .card-list { display: flex; flex-direction: column; gap: 1rem; padding-bottom: 4rem; }
-        .job-card { background: white; border: 1px solid var(--border-color); border-radius: 16px; padding: 1.25rem; box-shadow: 0 4px 20px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 1rem; }
+        .card-list { display: grid; grid-template-columns: 1fr; gap: 1.5rem; padding-bottom: 4rem; }
+        @media(min-width: 768px) {
+            .card-list { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+        }
+        .job-card { background: white; border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.03); display: flex; flex-direction: column; gap: 1.25rem; transition: transform 0.2s, box-shadow 0.2s; }
+        .job-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.06); }
         
         .card-header { display: flex; justify-content: space-between; align-items: center; }
-        .badge { font-size: 0.6rem; font-weight: 800; padding: 0.35rem 0.6rem; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge { font-size: 0.65rem; font-weight: 800; padding: 0.4rem 0.75rem; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.5px; }
         .badge.in-progress { background: var(--primary-light); color: var(--primary); }
         .badge.completed { background: var(--success-light); color: var(--success); }
         .badge.pending { background: #fef9c3; color: #a16207; }
 
-        .job-price { font-size: 1.05rem; font-weight: 800; color: var(--text-dark); }
+        .job-price { font-size: 1.15rem; font-weight: 800; color: var(--text-dark); }
 
-        .job-title { font-size: 1rem; font-weight: 800; line-height: 1.3; color: var(--text-dark); }
+        .job-title { font-size: 1.1rem; font-weight: 800; line-height: 1.4; color: var(--text-dark); }
 
-        .job-profile { display: flex; align-items: center; justify-content: space-between; }
+        .job-profile { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0; border-top: 1px dashed var(--border-color); border-bottom: 1px dashed var(--border-color); }
         .profile-left { display: flex; align-items: center; gap: 0.75rem; }
-        .avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: #e2e8f0; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #e2e8f0; }
         .profile-info { display: flex; flex-direction: column; gap: 0.1rem; }
-        .profile-name { font-size: 0.825rem; font-weight: 700; color: var(--text-dark); }
-        .job-time { font-size: 0.7rem; font-weight: 600; color: var(--text-light); }
+        .profile-name { font-size: 0.9rem; font-weight: 700; color: var(--text-dark); }
+        .job-time { font-size: 0.75rem; font-weight: 600; color: var(--text-light); }
         
-        .rating-pill { background: #ffedd5; color: #9a3412; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 99px; display: flex; align-items: center; gap: 0.25rem; }
-        .rating-pill svg { width: 10px; height: 10px; }
+        .rating-pill { background: #ffedd5; color: #9a3412; font-size: 0.75rem; font-weight: 800; padding: 0.25rem 0.75rem; border-radius: 99px; display: flex; align-items: center; gap: 0.25rem; }
+        .rating-pill svg { width: 12px; height: 12px; }
 
-        .card-actions { display: flex; gap: 0.75rem; margin-top: 0.25rem; }
-        .btn-action { flex: 1; padding: 0.8rem; text-align: center; border-radius: 12px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-block;}
-        .btn-gray { background: var(--input-bg); color: var(--text-muted); }
+        .card-actions { display: flex; gap: 0.75rem; margin-top: auto; }
+        .btn-action { flex: 1; padding: 0.85rem; text-align: center; border-radius: 12px; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-block; }
+        .btn-gray { background: var(--input-bg); color: var(--text-dark); }
         .btn-gray:hover { background: #e2e8f0; }
         .btn-primary { background: #4f46e5; color: white; }
         .btn-primary:hover { background: #4338ca; }
-        .btn-primary-ghost { background: var(--input-bg); color: var(--primary); }
+        .btn-primary-ghost { background: var(--primary-light); color: var(--primary); }
+        .btn-primary-ghost:hover { background: #dbeafe; }
 
         .hidden { display: none !important; }
         
-        .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-muted); font-weight: 600; font-size: 0.9rem;}
+        .empty-state { text-align: center; padding: 4rem 1rem; color: var(--text-muted); font-weight: 600; font-size: 1rem; grid-column: 1 / -1; background: white; border-radius: 16px; border: 1px dashed var(--border-color); }
 
-        /* Details Modal */
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 500; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); }
-        .modal-overlay.active { display: flex; animation: fadeBg 0.2s ease; }
+        /* Details Modal - Floating Centered Desktop Style */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 500; align-items: center; justify-content: center; backdrop-filter: blur(4px); padding: 1rem; }
+        .modal-overlay.active { display: flex; animation: fadeBg 0.25s ease; }
         @keyframes fadeBg { from { opacity: 0; } to { opacity: 1; } }
-        .modal-sheet { background: white; border-radius: 24px 24px 0 0; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; padding: 1.5rem; animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        @keyframes slideUp { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .modal-handle { width: 40px; height: 4px; background: #e2e8f0; border-radius: 99px; margin: 0 auto 1.5rem; }
-        .modal-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.25rem; }
-        .modal-type { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1.5rem; }
-        .modal-section-label { font-size: 0.65rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
-        .modal-desc-text { font-size: 0.9rem; line-height: 1.7; color: #374151; background: var(--input-bg); border-radius: 10px; padding: 1rem; margin-bottom: 1.5rem; }
-        .modal-photos { display: flex; gap: 0.75rem; overflow-x: auto; scrollbar-width: none; margin-bottom: 1.5rem; }
-        .modal-photos::-webkit-scrollbar { display: none; }
-        .modal-photo { width: 110px; height: 85px; flex-shrink: 0; border-radius: 10px; object-fit: cover; border: 1px solid var(--border-color); cursor: zoom-in; transition: transform 0.2s; }
-        .modal-photo:hover { transform: scale(1.04); }
-        .btn-close-modal { width: 100%; padding: 0.875rem; border-radius: 12px; background: var(--input-bg); color: var(--text-muted); font-weight: 700; font-size: 0.9rem; cursor: pointer; margin-top: 0.5rem; }
+        
+        .modal-sheet { background: white; border-radius: 20px; width: 100%; max-width: 560px; max-height: 85vh; overflow-y: auto; padding: 2rem; position: relative; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        @keyframes popIn { from { transform: scale(0.95) translateY(10px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+        
+        .modal-close-icon { position: absolute; top: 1.5rem; right: 1.5rem; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--input-bg); color: var(--text-muted); border-radius: 50%; cursor: pointer; transition: all 0.2s; }
+        .modal-close-icon:hover { background: #e2e8f0; color: var(--text-dark); }
+        
+        .modal-title { font-size: 1.25rem; font-weight: 800; margin-bottom: 0.25rem; color: var(--text-dark); padding-right: 2rem; }
+        .modal-type { font-size: 0.8rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1.5rem; }
+        .modal-section-label { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem; }
+        .modal-desc-text { font-size: 0.95rem; line-height: 1.6; color: var(--text-dark); background: var(--input-bg); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; }
+        
+        .modal-photos { display: flex; gap: 0.75rem; overflow-x: auto; scrollbar-width: thin; padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        .modal-photos::-webkit-scrollbar { height: 6px; }
+        .modal-photos::-webkit-scrollbar-track { background: transparent; }
+        .modal-photos::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .modal-photo { width: 140px; height: 100px; flex-shrink: 0; border-radius: 12px; object-fit: cover; border: 1px solid var(--border-color); cursor: zoom-in; transition: transform 0.2s; }
+        .modal-photo:hover { transform: scale(1.02); }
+        
+        .btn-close-modal { display: none; } /* Replaced by close icon */
+
         /* Lightbox */
         #historyLightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:1000; align-items:center; justify-content:center; cursor:zoom-out; }
 
         /* Review Modal */
-        .review-stars { display: flex; gap: 0.35rem; margin-bottom: 1rem; }
-        .review-star { font-size: 1.75rem; color: #d1d5db; cursor: pointer; transition: color 0.15s, transform 0.15s; }
+        .review-stars { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+        .review-star { font-size: 2rem; color: #e2e8f0; cursor: pointer; transition: color 0.15s, transform 0.15s; }
         .review-star:hover { transform: scale(1.15); }
         .review-star.selected { color: #f59e0b; }
-        .review-textarea { width: 100%; padding: 0.85rem; border: 1px solid var(--border-color); border-radius: 12px; font-family: inherit; font-size: 0.9rem; resize: vertical; min-height: 80px; color: var(--text-dark); background: var(--input-bg); }
-        .review-textarea:focus { border-color: var(--primary); background: white; outline: none; }
-        .btn-submit-review { width: 100%; padding: 0.85rem; border-radius: 12px; background: var(--primary); color: white; font-weight: 700; font-size: 0.9rem; cursor: pointer; border: none; transition: background 0.2s; }
+        .review-textarea { width: 100%; padding: 1rem; border: 1px solid var(--border-color); border-radius: 12px; font-family: inherit; font-size: 0.95rem; resize: vertical; min-height: 100px; color: var(--text-dark); background: var(--input-bg); margin-bottom: 1.5rem;}
+        .review-textarea:focus { border-color: var(--primary); background: white; outline: none; box-shadow: 0 0 0 3px var(--primary-light); }
+        .btn-submit-review { width: 100%; padding: 0.85rem; border-radius: 12px; background: var(--primary); color: white; font-weight: 700; font-size: 0.95rem; cursor: pointer; border: none; transition: background 0.2s; }
         .btn-submit-review:hover { background: #1d4ed8; }
+        .btn-cancel-modal { width: 100%; padding: 0.85rem; border-radius: 12px; background: var(--input-bg); color: var(--text-dark); font-weight: 700; font-size: 0.95rem; cursor: pointer; text-align: center; border: none; transition: background 0.2s; }
+        .btn-cancel-modal:hover { background: #e2e8f0; }
         .badge-reviewed { background: #dcfce7; color: #16a34a; font-size: 0.6rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 6px; margin-left: 0.5rem; }
     </style>
 </head>
 <body>
 
-    <div class="mobile-container">
+    <div class="main-container">
         
         <div class="header">
-            <a href="{{ route('dashboard') }}" class="icon-btn">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-            </a>
             <h1>Service History</h1>
-            <div class="icon-btn">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
-            </div>
+            <a href="{{ route('dashboard') }}" class="icon-btn" title="Back to Dashboard">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            </a>
         </div>
 
         <div class="content">
             
-            <div class="search-container">
-                <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" class="search-input" id="searchInput" placeholder="Search for jobs...">
-            </div>
+            <div class="controls-row">
+                <div class="search-container">
+                    <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search for jobs...">
+                </div>
 
-            <div class="toggle-container">
-                <div class="toggle-btn active" id="tab-active">Active</div>
-                <div class="toggle-btn" id="tab-completed">Completed</div>
+                <div class="toggle-container">
+                    <div class="toggle-btn active" id="tab-active">Active Jobs</div>
+                    <div class="toggle-btn" id="tab-completed">Completed</div>
+                </div>
             </div>
 
             <div class="card-list" id="cardList">
@@ -223,8 +243,6 @@
                                         </button>
                                     @endif
                                 @endif
-                            @else
-                                <a href="#" class="btn-action btn-primary-ghost" style="flex:1;">View Status</a>
                             @endif
                         </div>
                     </div>
@@ -240,11 +258,14 @@
     <!-- Job Details Modal -->
     <div class="modal-overlay" id="historyModal">
         <div class="modal-sheet">
-            <div class="modal-handle"></div>
+            <div class="modal-close-icon" onclick="closeHistoryModal()">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </div>
+            
             <p class="modal-type" id="histModalType">—</p>
             <h2 class="modal-title" id="histModalTitle">Job Details</h2>
 
-            <div id="histModalPhotosWrap" style="display:none; margin-bottom:1.5rem;">
+            <div id="histModalPhotosWrap" style="display:none; margin-top: 1.5rem; margin-bottom:1.5rem;">
                 <p class="modal-section-label">Photos</p>
                 <div class="modal-photos" id="histModalPhotos"></div>
             </div>
@@ -252,25 +273,26 @@
             <p class="modal-section-label">Description</p>
             <div class="modal-desc-text" id="histModalDesc" style="margin-bottom:1.5rem;">No description provided.</div>
 
-            <div id="histModalInvoiceWrap" style="display:none; margin-top:1.5rem; margin-bottom:1.5rem; background: var(--bg-page); border-radius: 12px; padding: 1rem; border: 1px solid var(--border-color);">
-                <p class="modal-section-label" style="margin-bottom:0.75rem;">Itemized Invoice Charges</p>
-                <div id="histModalInvoiceItems" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
-                <div style="margin-top: 0.75rem; border-top: 1px dashed var(--border-color); padding-top: 0.5rem; display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 0.9rem;">
-                    <span style="color: var(--text-muted);">Total Billed:</span>
-                    <span id="histModalInvoiceTotal" style="color: var(--success); font-size:1.1rem;">$0.00</span>
+            <div id="histModalInvoiceWrap" style="display:none; margin-top:1.5rem; margin-bottom:1.5rem; background: var(--bg-page); border-radius: 12px; padding: 1.25rem; border: 1px solid var(--border-color);">
+                <p class="modal-section-label" style="margin-bottom:1rem;">Itemized Invoice Charges</p>
+                <div id="histModalInvoiceItems" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
+                <div style="margin-top: 1rem; border-top: 1px dashed var(--border-color); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 1rem;">
+                    <span style="color: var(--text-dark);">Total Billed:</span>
+                    <span id="histModalInvoiceTotal" style="color: var(--success); font-size:1.25rem;">$0.00</span>
                 </div>
             </div>
-
-            <button class="btn-close-modal" onclick="closeHistoryModal()">Close</button>
         </div>
     </div>
 
     <!-- Review Modal -->
     <div class="modal-overlay" id="reviewModal">
         <div class="modal-sheet">
-            <div class="modal-handle"></div>
+            <div class="modal-close-icon" onclick="closeReviewModal()">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </div>
+            
             <h2 class="modal-title">Rate Your Experience</h2>
-            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.25rem;">How was the service? Your feedback helps improve our community.</p>
+            <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1.5rem; line-height: 1.5;">How was the service? Your feedback helps improve our community.</p>
             
             <form method="POST" id="reviewForm" action="">
                 @csrf
@@ -288,8 +310,8 @@
                 <p class="modal-section-label">Feedback (Optional)</p>
                 <textarea class="review-textarea" name="feedback" id="reviewFeedback" placeholder="Share your experience with this professional..."></textarea>
 
-                <div style="display:flex; gap:0.75rem; margin-top:1.25rem;">
-                    <button type="button" class="btn-close-modal" onclick="closeReviewModal()" style="flex:1;">Cancel</button>
+                <div style="display:flex; gap:1rem; margin-top:0.5rem;">
+                    <button type="button" class="btn-cancel-modal" onclick="closeReviewModal()" style="flex:1;">Cancel</button>
                     <button type="submit" class="btn-submit-review" style="flex:1;">Submit Review</button>
                 </div>
             </form>
