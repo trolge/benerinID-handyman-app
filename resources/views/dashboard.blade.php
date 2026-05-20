@@ -798,8 +798,8 @@
                 <a href="{{ route('dashboard') }}" class="active">Dashboard</a>
                 <a href="{{ route('services.index') }}">Services</a>
                 <a href="{{ route('professionals.index') }}">Professionals</a>
-                <a href="#">Messages</a>
-                <a href="#">Payments</a>
+                <a href="{{ route('chat.index') }}">Messages</a>
+                <a href="{{ route('payments.index') }}">Payments</a>
             </div>
         </div>
         <div class="nav-right">
@@ -906,7 +906,7 @@
                     </svg>
                     Schedule
                 </a>
-                <a href="#" class="menu-item">
+                <a href="{{ route('history.index') }}" class="menu-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
@@ -1180,6 +1180,95 @@
                     let jobStatus = job.JobStatus;
                     let desc = job.JobDesk ? job.JobDesk : 'No additional details.';
                     let duration = job.JobDuration ? `${job.JobDuration} hrs` : 'TBD';
+                    let handymanRating = job.handyman && job.handyman.avg_rating ? `★ ${parseFloat(job.handyman.avg_rating).toFixed(1)}` : '★ New';
+
+                    let actionHtml = '';
+                    if (jobStatus === 'awaiting_approval') {
+                        let itemsHtml = '';
+                        const items = Array.isArray(job.InvoiceItems) ? job.InvoiceItems : (job.InvoiceItems ? JSON.parse(job.InvoiceItems) : []);
+                        if (items && items.length > 0) {
+                            let subtotal = 0;
+                            items.forEach(i => subtotal += parseFloat(i.price || 0));
+                            itemsHtml = `
+                            <div style="margin-top: 1rem; margin-bottom: 1rem; background: var(--bg-sidebar); padding: 1.25rem; border-radius: 16px; border: 1px solid var(--border-color);">
+                                <span style="display:block; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform:uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">Estimation Details</span>
+                                <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                                    ${items.map(item => `
+                                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;">
+                                            <span style="color: var(--text-dark); font-weight: 500;">${item.name}</span>
+                                            <span style="color: var(--text-dark); font-weight: 700;">$${parseFloat(item.price).toFixed(2)}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div style="margin-top: 0.75rem; border-top: 1px dashed var(--border-color); padding-top: 0.5rem;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; font-weight:800; color:var(--text-dark); font-size:0.9rem;">
+                                        <span>Total Estimated:</span>
+                                        <span style="color:var(--primary); font-size:1.1rem;">$${subtotal.toFixed(2)}</span>
+                                    </div>
+                                </div>
+                            </div>`;
+                        }
+
+                        actionHtml = `
+                        ${itemsHtml}
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; margin-bottom: 1.5rem;">
+                            <form method="POST" action="/jobs/${job.JobID}/status" style="margin:0;">
+                                <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="status" value="repairing">
+                                <button type="submit" class="btn-message" style="margin:0; width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem; background:var(--primary); color:white; padding:0.75rem 0.85rem; border:none; border-radius:12px; font-weight:700; cursor:pointer;">
+                                    ✓ Approve & Begin Repairs
+                                </button>
+                            </form>
+                            <form method="POST" action="/jobs/${job.JobID}/status" style="margin:0;">
+                                <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="status" value="cancelled">
+                                <button type="submit" style="width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem; background:#fee2e2; color:#ef4444; border:1px solid #fecaca; padding:0.75rem 0.85rem; border-radius:12px; font-weight:700; cursor:pointer;">
+                                    ✕ Decline & Cancel
+                                </button>
+                            </form>
+                        </div>`;
+                    } else if (jobStatus === 'repairing' || jobStatus === 'finished') {
+                        let itemsHtml = '';
+                        const items = Array.isArray(job.InvoiceItems) ? job.InvoiceItems : (job.InvoiceItems ? JSON.parse(job.InvoiceItems) : []);
+                        if (items && items.length > 0) {
+                            let subtotal = 0;
+                            items.forEach(i => subtotal += parseFloat(i.price || 0));
+                            itemsHtml = `
+                            <div style="margin-top: 1rem; margin-bottom: 1rem; background: var(--bg-sidebar); padding: 1.25rem; border-radius: 16px; border: 1px solid var(--border-color);">
+                                <span style="display:block; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform:uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">Agreed Cost Breakdown</span>
+                                <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                                    ${items.map(item => `
+                                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;">
+                                            <span style="color: var(--text-dark); font-weight: 500;">${item.name}</span>
+                                            <span style="color: var(--text-dark); font-weight: 700;">$${parseFloat(item.price).toFixed(2)}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div style="margin-top: 0.75rem; border-top: 1px dashed var(--border-color); padding-top: 0.5rem;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; font-weight:800; color:var(--text-dark); font-size:0.9rem;">
+                                        <span>Total:</span>
+                                        <span style="color:var(--primary); font-size:1.1rem;">$${subtotal.toFixed(2)}</span>
+                                    </div>
+                                </div>
+                            </div>`;
+                        }
+                        actionHtml = itemsHtml;
+                        
+                        if (jobStatus === 'finished') {
+                            actionHtml += `
+                            <a href="/payments" style="display:block; text-decoration:none; margin-top: 1rem; margin-bottom: 1.5rem;">
+                                <button class="btn-message" style="margin:0; width:100%; background: var(--success); color:white; font-weight:800; border:none; display:flex; align-items:center; justify-content:center; gap:0.5rem; padding: 0.85rem; border-radius:12px; cursor:pointer;">
+                                    💳 Proceed to Payment Page
+                                </button>
+                            </a>`;
+                        }
+                    }
+
+                    let badgeColor = '#e0e7ff';
+                    if (jobStatus === 'pending') badgeColor = '#fef700';
+                    else if (jobStatus === 'finished') badgeColor = '#d1fae5';
+                    else if (jobStatus === 'awaiting_approval') badgeColor = '#fef3c7';
+                    else if (jobStatus === 'repairing') badgeColor = '#dbeafe';
 
                     html += `
                     <div class="job-card">
@@ -1188,7 +1277,7 @@
                                 <span class="job-type-label">${job.JobName}</span>
                                 <h3 class="job-title">${job.JobType}</h3>
                             </div>
-                            <span class="status-badge" style="background:${jobStatus === 'pending' ? '#fef700' : (jobStatus === 'completed' ? '#d1fae5' : '#e0e7ff')};color:#111;">${jobStatus}</span>
+                            <span class="status-badge" style="background:${badgeColor};color:#111;">${jobStatus.toUpperCase()}</span>
                         </div>
                         <p style="font-size: 0.8rem; margin:1rem 0; color:var(--text-muted);">${desc}</p>
                         
@@ -1197,10 +1286,12 @@
                             <div class="assigned-info">
                                 <span class="assigned-label">Assigned Handyman</span>
                                 <span class="assigned-name">${handymanname}</span>
-                                <span class="assigned-rating">★ 5.0</span>
+                                <span class="assigned-rating">${handymanRating}</span>
                             </div>
                         </div>
                     </div>
+
+                    ${actionHtml}
 
                     <div class="info-boxes">
                         <div class="info-box">
@@ -1219,7 +1310,7 @@
                         </div>
                     </div>
 
-                    <button class="btn-message">
+                    <button class="btn-message" onclick="window.location.href='/messages?job=${job.JobID}'">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                         Message Pro
                     </button>

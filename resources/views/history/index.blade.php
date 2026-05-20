@@ -100,6 +100,17 @@
         .btn-close-modal { width: 100%; padding: 0.875rem; border-radius: 12px; background: var(--input-bg); color: var(--text-muted); font-weight: 700; font-size: 0.9rem; cursor: pointer; margin-top: 0.5rem; }
         /* Lightbox */
         #historyLightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:1000; align-items:center; justify-content:center; cursor:zoom-out; }
+
+        /* Review Modal */
+        .review-stars { display: flex; gap: 0.35rem; margin-bottom: 1rem; }
+        .review-star { font-size: 1.75rem; color: #d1d5db; cursor: pointer; transition: color 0.15s, transform 0.15s; }
+        .review-star:hover { transform: scale(1.15); }
+        .review-star.selected { color: #f59e0b; }
+        .review-textarea { width: 100%; padding: 0.85rem; border: 1px solid var(--border-color); border-radius: 12px; font-family: inherit; font-size: 0.9rem; resize: vertical; min-height: 80px; color: var(--text-dark); background: var(--input-bg); }
+        .review-textarea:focus { border-color: var(--primary); background: white; outline: none; }
+        .btn-submit-review { width: 100%; padding: 0.85rem; border-radius: 12px; background: var(--primary); color: white; font-weight: 700; font-size: 0.9rem; cursor: pointer; border: none; transition: background 0.2s; }
+        .btn-submit-review:hover { background: #1d4ed8; }
+        .badge-reviewed { background: #dcfce7; color: #16a34a; font-size: 0.6rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 6px; margin-left: 0.5rem; }
     </style>
 </head>
 <body>
@@ -155,10 +166,13 @@
                         
                         // Rating Logic
                         if($isHandyman) {
-                            $rating = $job->customer && $job->customer->rating > 0 ? $job->customer->rating : 4.9;
+                            $rating = $job->customer && $job->customer->rating > 0 ? $job->customer->rating : null;
                         } else {
-                            $rating = $job->handyman && $job->handyman->rating > 0 ? $job->handyman->rating : 4.9;
+                            $rating = ($job->handyman && isset($job->handyman->avg_rating)) ? $job->handyman->avg_rating : null;
                         }
+                        
+                        // Check if current user already reviewed this job
+                        $existingReview = $job->ratings->where('CustomerID', auth()->id())->first();
                         
                         // Format Start Date
                         $timeStr = \Carbon\Carbon::parse($job->JobStartDate)->format('M d, Y • h:i A');
@@ -181,12 +195,14 @@
                                 </div>
                             </div>
                             
-                            @if($job->JobStatus !== 'pending')
-                            <div class="rating-pill">
-                                <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                                {{ number_format($rating, 1) }}
+                            <div class="rating-pill" style="{{ !$rating ? 'background:#f1f5f9; color:var(--text-muted);' : '' }}">
+                                @if($rating)
+                                    <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                    {{ number_format($rating, 1) }}
+                                @else
+                                    NEW
+                                @endif
                             </div>
-                            @endif
                         </div>
 
                         <div class="card-actions">
@@ -196,9 +212,17 @@
                             </button>
                             @if($job->JobStatus === 'finished')
                                 @if(!$isHandyman)
-                                    <a href="#" class="btn-action btn-primary">Rebook</a>
+                                    <a href="{{ route('booking.create', ['handyman' => $job->HandymanID]) }}" class="btn-action btn-primary">Rebook</a>
+                                    @if($existingReview)
+                                        <button type="button" class="btn-action btn-gray" onclick="openReviewModal({{ $job->JobID }}, {{ $existingReview->Rating }}, '{{ addslashes($existingReview->feedback ?? '') }}')">
+                                            ★ {{ $existingReview->Rating }}.0 — Edit Review
+                                        </button>
+                                    @else
+                                        <button type="button" class="btn-action btn-primary" style="background:#f59e0b;" onclick="openReviewModal({{ $job->JobID }})">
+                                            Leave Review
+                                        </button>
+                                    @endif
                                 @endif
-                                <a href="#" class="btn-action btn-gray">Leave Review</a>
                             @else
                                 <a href="#" class="btn-action btn-primary-ghost" style="flex:1;">View Status</a>
                             @endif
@@ -226,9 +250,49 @@
             </div>
 
             <p class="modal-section-label">Description</p>
-            <div class="modal-desc-text" id="histModalDesc">No description provided.</div>
+            <div class="modal-desc-text" id="histModalDesc" style="margin-bottom:1.5rem;">No description provided.</div>
+
+            <div id="histModalInvoiceWrap" style="display:none; margin-top:1.5rem; margin-bottom:1.5rem; background: var(--bg-page); border-radius: 12px; padding: 1rem; border: 1px solid var(--border-color);">
+                <p class="modal-section-label" style="margin-bottom:0.75rem;">Itemized Invoice Charges</p>
+                <div id="histModalInvoiceItems" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+                <div style="margin-top: 0.75rem; border-top: 1px dashed var(--border-color); padding-top: 0.5rem; display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 0.9rem;">
+                    <span style="color: var(--text-muted);">Total Billed:</span>
+                    <span id="histModalInvoiceTotal" style="color: var(--success); font-size:1.1rem;">$0.00</span>
+                </div>
+            </div>
 
             <button class="btn-close-modal" onclick="closeHistoryModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- Review Modal -->
+    <div class="modal-overlay" id="reviewModal">
+        <div class="modal-sheet">
+            <div class="modal-handle"></div>
+            <h2 class="modal-title">Rate Your Experience</h2>
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.25rem;">How was the service? Your feedback helps improve our community.</p>
+            
+            <form method="POST" id="reviewForm" action="">
+                @csrf
+                <input type="hidden" name="rating" id="reviewRatingInput" value="5">
+                
+                <p class="modal-section-label">Rating</p>
+                <div class="review-stars" id="reviewStars">
+                    <span class="review-star selected" onclick="setReviewRating(1)">★</span>
+                    <span class="review-star selected" onclick="setReviewRating(2)">★</span>
+                    <span class="review-star selected" onclick="setReviewRating(3)">★</span>
+                    <span class="review-star selected" onclick="setReviewRating(4)">★</span>
+                    <span class="review-star selected" onclick="setReviewRating(5)">★</span>
+                </div>
+
+                <p class="modal-section-label">Feedback (Optional)</p>
+                <textarea class="review-textarea" name="feedback" id="reviewFeedback" placeholder="Share your experience with this professional..."></textarea>
+
+                <div style="display:flex; gap:0.75rem; margin-top:1.25rem;">
+                    <button type="button" class="btn-close-modal" onclick="closeReviewModal()" style="flex:1;">Cancel</button>
+                    <button type="submit" class="btn-submit-review" style="flex:1;">Submit Review</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -238,15 +302,18 @@
     </div>
 
     <script>
-        const jobsPayload = @json($jobs->map(function($j) {
+        const jobsPayload = {!! json_encode($jobs->map(function($j) {
             return [
                 'JobID'   => $j->JobID,
                 'JobName' => $j->JobName,
                 'JobType' => $j->JobType,
                 'JobDesk' => $j->JobDesk,
                 'JobImages' => $j->JobImages,
+                'InvoiceItems' => $j->InvoiceItems,
+                'JobPrice' => $j->JobPrice,
+                'JobStatus' => $j->JobStatus,
             ];
-        })->values());
+        })->values()) !!};
 
         const storageBase = '{{ asset("storage") }}';
 
@@ -278,6 +345,45 @@
                 photosWrap.style.display = 'none';
             }
 
+            // Populating Billed Invoice Items in history modal
+            const invoiceWrap = document.getElementById('histModalInvoiceWrap');
+            const invoiceItemsContainer = document.getElementById('histModalInvoiceItems');
+            const invoiceTotalEl = document.getElementById('histModalInvoiceTotal');
+            invoiceItemsContainer.innerHTML = '';
+
+            const invoiceItems = Array.isArray(job.InvoiceItems) ? job.InvoiceItems : (job.InvoiceItems ? JSON.parse(job.InvoiceItems) : []);
+            if (invoiceItems && invoiceItems.length > 0) {
+                invoiceWrap.style.display = 'block';
+                invoiceItems.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.style.display = 'flex';
+                    itemDiv.style.justifyContent = 'space-between';
+                    itemDiv.style.alignItems = 'center';
+                    itemDiv.style.fontSize = '0.85rem';
+                    itemDiv.innerHTML = `
+                        <span style="color: var(--text-dark); font-weight: 500;">${item.name}</span>
+                        <span style="color: var(--text-dark); font-weight: 700;">$${parseFloat(item.price).toFixed(2)}</span>
+                    `;
+                    invoiceItemsContainer.appendChild(itemDiv);
+                });
+                invoiceTotalEl.textContent = '$' + parseFloat(job.JobPrice || 0).toFixed(2);
+            } else if (job.JobStatus === 'finished' && job.JobPrice) {
+                invoiceWrap.style.display = 'block';
+                const itemDiv = document.createElement('div');
+                itemDiv.style.display = 'flex';
+                itemDiv.style.justifyContent = 'space-between';
+                itemDiv.style.alignItems = 'center';
+                itemDiv.style.fontSize = '0.85rem';
+                itemDiv.innerHTML = `
+                    <span style="color: var(--text-dark); font-weight: 500;">Flat Rate / General Service Charge</span>
+                    <span style="color: var(--text-dark); font-weight: 700;">$${parseFloat(job.JobPrice).toFixed(2)}</span>
+                `;
+                invoiceItemsContainer.appendChild(itemDiv);
+                invoiceTotalEl.textContent = '$' + parseFloat(job.JobPrice).toFixed(2);
+            } else {
+                invoiceWrap.style.display = 'none';
+            }
+
             document.getElementById('historyModal').classList.add('active');
             document.body.style.overflow = 'hidden';
         };
@@ -289,6 +395,32 @@
 
         document.getElementById('historyModal').addEventListener('click', function(e) {
             if (e.target === this) closeHistoryModal();
+        });
+
+        // Review Modal Logic
+        window.openReviewModal = function(jobId, existingRating, existingFeedback) {
+            document.getElementById('reviewForm').action = '/history/' + jobId + '/review';
+            setReviewRating(existingRating || 5);
+            document.getElementById('reviewFeedback').value = existingFeedback || '';
+            document.getElementById('reviewModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.closeReviewModal = function() {
+            document.getElementById('reviewModal').classList.remove('active');
+            document.body.style.overflow = '';
+        };
+
+        window.setReviewRating = function(r) {
+            document.getElementById('reviewRatingInput').value = r;
+            const stars = document.querySelectorAll('#reviewStars .review-star');
+            stars.forEach((star, idx) => {
+                star.classList.toggle('selected', idx < r);
+            });
+        };
+
+        document.getElementById('reviewModal').addEventListener('click', function(e) {
+            if (e.target === this) closeReviewModal();
         });
 
         document.addEventListener('DOMContentLoaded', () => {

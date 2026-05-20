@@ -11,11 +11,12 @@ class Job extends Model
     
     protected $fillable = [
         'JobName', 'JobType', 'JobDesk', 'JobImages', 'HandymanID', 
-        'CustomerID', 'JobDuration', 'JobStartDate', 'JobEndDate', 'JobStatus', 'JobPrice'
+        'CustomerID', 'JobDuration', 'JobStartDate', 'JobEndDate', 'JobStatus', 'JobPrice', 'InvoiceItems'
     ];
 
     protected $casts = [
         'JobImages' => 'array',
+        'InvoiceItems' => 'array',
     ];
 
     // CRC Methods
@@ -33,6 +34,13 @@ class Job extends Model
     public static function createBook($data)
     {
         return self::create($data);
+    }
+
+    public static function autoRejectOldPending()
+    {
+        self::where('JobStatus', 'pending')
+            ->where('created_at', '<', now()->subDays(2))
+            ->update(['JobStatus' => 'cancelled']);
     }
 
     // Relationships
@@ -54,5 +62,10 @@ class Job extends Model
     public function ratings()
     {
         return $this->hasMany(Rating::class, 'JobID', 'JobID');
+    }
+
+    public function messages()
+    {
+        return $this->hasMany(Message::class, 'JobID', 'JobID');
     }
 }
