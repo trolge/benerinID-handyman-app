@@ -1281,6 +1281,7 @@
                             <span class="status-badge" style="background:${badgeColor};color:#111;">${jobStatus.toUpperCase()}</span>
                         </div>
                         <p style="font-size: 0.8rem; margin:1rem 0; color:var(--text-muted);">${desc}</p>
+                        ${job.JobLocation ? `<p style="font-size: 0.85rem; margin: 0 0 1rem 0; display:flex; align-items:center; gap:0.5rem; font-weight:500;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> ${job.JobLocation}</p>` : ''}
                         
                         <div class="assigned-box">
                             <div class="assigned-avatar" style="background:var(--primary); display:flex; align-items:center; justify-content:center; color:white; font-size:1.2rem; font-weight:bold;">${handymanname.charAt(0)}</div>

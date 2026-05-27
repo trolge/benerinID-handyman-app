@@ -10,7 +10,7 @@ class Job extends Model
     protected $primaryKey = 'JobID';
     
     protected $fillable = [
-        'JobName', 'JobType', 'JobDesk', 'JobImages', 'HandymanID', 
+        'JobName', 'JobType', 'JobDesk', 'JobImages', 'JobLocation', 'JobLocationLat', 'JobLocationLng', 'HandymanID', 
         'CustomerID', 'JobDuration', 'JobStartDate', 'JobEndDate', 'JobStatus', 'JobPrice', 'InvoiceItems'
     ];
 
