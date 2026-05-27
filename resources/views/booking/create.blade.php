@@ -585,6 +585,13 @@
                         <textarea name="JobDesk" class="text-input" placeholder="Describe the issue in detail..."
                             required>{{ old('JobDesk') }}</textarea>
                     </div>
+                    <div class="form-group">
+                        <label class="section-label">Service Location</label>
+                        <input type="text" id="JobLocation" name="JobLocation" class="text-input" placeholder="Enter your full address" value="{{ old('JobLocation') }}" required autocomplete="off">
+                        <input type="hidden" id="JobLocationLat" name="JobLocationLat" value="{{ old('JobLocationLat') }}">
+                        <input type="hidden" id="JobLocationLng" name="JobLocationLng" value="{{ old('JobLocationLng') }}">
+                        <div id="map" style="height: 200px; width: 100%; margin-top: 10px; border-radius: 8px; display: block;"></div>
+                    </div>
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="section-label">Media Upload <span
                                 style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.7rem;">(optional,
@@ -871,6 +878,145 @@
                 document.getElementById('iJobStartDate').value = `${yr}-${mo}-${dt} ${hr}:${mn}:00`;
                 document.getElementById('bookingForm').submit();
             };
+        });
+    </script>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <style>
+        .autocomplete-results {
+            position: absolute;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .autocomplete-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.9rem;
+        }
+        .autocomplete-item:hover {
+            background-color: #f9fafb;
+        }
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+        .input-wrapper {
+            position: relative;
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const input = document.getElementById('JobLocation');
+            const latInput = document.getElementById('JobLocationLat');
+            const lngInput = document.getElementById('JobLocationLng');
+            const mapDiv = document.getElementById('map');
+            
+            // Wrap input for autocomplete results
+            const wrapper = document.createElement('div');
+            wrapper.className = 'input-wrapper';
+            input.parentNode.insertBefore(wrapper, input);
+            wrapper.appendChild(input);
+            
+            const resultsDiv = document.createElement('div');
+            resultsDiv.className = 'autocomplete-results';
+            wrapper.appendChild(resultsDiv);
+
+            // Default location (Jakarta, Indonesia)
+            const defaultLocation = [-6.2088, 106.8456];
+            
+            // Check if there are old values
+            const initialLocation = (latInput.value && lngInput.value) 
+                ? [parseFloat(latInput.value), parseFloat(lngInput.value)] 
+                : defaultLocation;
+
+            // Initialize Leaflet Map
+            const map = L.map('map').setView(initialLocation, 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            let marker = L.marker(initialLocation, { draggable: true }).addTo(map);
+
+            // Handle marker drag
+            marker.on('dragend', function (e) {
+                const pos = marker.getLatLng();
+                latInput.value = pos.lat;
+                lngInput.value = pos.lng;
+                
+                // Reverse geocoding via Nominatim
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.lat}&lon=${pos.lng}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data && data.display_name) {
+                            input.value = data.display_name;
+                        }
+                    });
+            });
+
+            // Autocomplete logic
+            let timeout = null;
+            input.addEventListener('input', function() {
+                clearTimeout(timeout);
+                const query = this.value;
+                if (query.length < 3) {
+                    resultsDiv.style.display = 'none';
+                    return;
+                }
+                
+                timeout = setTimeout(() => {
+                    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`)
+                        .then(res => res.json())
+                        .then(data => {
+                            resultsDiv.innerHTML = '';
+                            if (data.length > 0) {
+                                data.forEach(item => {
+                                    const div = document.createElement('div');
+                                    div.className = 'autocomplete-item';
+                                    div.textContent = item.display_name;
+                                    div.onclick = () => {
+                                        input.value = item.display_name;
+                                        latInput.value = item.lat;
+                                        lngInput.value = item.lon;
+                                        resultsDiv.style.display = 'none';
+                                        
+                                        const newLatLng = new L.LatLng(item.lat, item.lon);
+                                        map.setView(newLatLng, 15);
+                                        marker.setLatLng(newLatLng);
+                                    };
+                                    resultsDiv.appendChild(div);
+                                });
+                                resultsDiv.style.display = 'block';
+                            } else {
+                                resultsDiv.style.display = 'none';
+                            }
+                        });
+                }, 500);
+            });
+
+            // Hide results when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!wrapper.contains(e.target)) {
+                    resultsDiv.style.display = 'none';
+                }
+            });
+
+            // Prevent form submission on enter
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                }
+            });
         });
     </script>
 </body>

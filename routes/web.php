@@ -115,6 +115,14 @@ Route::get('/run-migrations', function() {
             $schema::table('handyman_jobs', fn($t) => $t->json('InvoiceItems')->nullable()->after('JobPrice'));
             $out .= 'Added InvoiceItems column.<br>';
         }
+        if (!$schema::hasColumn('handyman_jobs', 'JobLocation')) {
+            $schema::table('handyman_jobs', function($t) {
+                $t->string('JobLocation')->nullable()->after('JobDesk');
+                $t->decimal('JobLocationLat', 10, 8)->nullable()->after('JobLocation');
+                $t->decimal('JobLocationLng', 11, 8)->nullable()->after('JobLocationLat');
+            });
+            $out .= 'Added JobLocation columns.<br>';
+        }
         if (!$schema::hasColumn('users', 'avatar')) {
             $schema::table('users', fn($t) => $t->string('avatar')->nullable());
             $out .= 'Added avatar column.<br>';

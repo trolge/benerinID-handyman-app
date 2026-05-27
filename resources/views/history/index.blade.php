@@ -205,6 +205,9 @@
                         </div>
                         
                         <h2 class="job-title">{{ $job->JobName }}</h2>
+                        @if($job->JobLocation)
+                            <p style="font-size: 0.85rem; margin-bottom: 1rem; color:var(--text-muted); display:flex; align-items:center; gap:0.5rem;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> {{ $job->JobLocation }}</p>
+                        @endif
                         
                         <div class="job-profile">
                             <div class="profile-left">

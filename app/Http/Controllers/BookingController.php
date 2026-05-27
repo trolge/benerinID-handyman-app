@@ -54,6 +54,9 @@ class BookingController extends Controller
             'JobStartDate' => 'required|date',
             'HandymanID'   => 'required|exists:users,UserID',
             'JobImages.*'  => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'JobLocation'  => 'required|string|max:255',
+            'JobLocationLat' => 'nullable|numeric',
+            'JobLocationLng' => 'nullable|numeric',
         ]);
 
         $handyman = User::where('UserID', $validated['HandymanID'])
@@ -105,6 +108,9 @@ class BookingController extends Controller
             'JobType'      => $validated['JobType'],
             'JobDesk'      => $validated['JobDesk'],
             'JobImages'    => !empty($imagePaths) ? $imagePaths : null,
+            'JobLocation'  => $validated['JobLocation'],
+            'JobLocationLat' => $validated['JobLocationLat'] ?? null,
+            'JobLocationLng' => $validated['JobLocationLng'] ?? null,
             'JobStartDate' => $startDate,
             'JobEndDate'   => $endDate,
             'JobDuration'  => 2,
