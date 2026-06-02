@@ -558,7 +558,7 @@
         <form action="{{ route('booking.store') }}" method="POST" enctype="multipart/form-data" id="bookingForm">
             @csrf
             <input type="hidden" name="HandymanID" value="{{ $handyman->UserID }}">
-            <input type="hidden" name="JobType" id="iJobType" value="Plumbing">
+            <input type="hidden" name="JobType" id="iJobType" value="{{ $handymanTags[0] ?? '' }}">
             <input type="hidden" name="JobStartDate" id="iJobStartDate">
 
             <div class="booking-grid">
@@ -572,12 +572,9 @@
                     <div class="form-group">
                         <label class="section-label">Repair Type</label>
                         <div class="pills-grid" id="typePills">
-                            <div class="type-pill active">Plumbing</div>
-                            <div class="type-pill">Drain Cleaning</div>
-                            <div class="type-pill">Electrical</div>
-                            <div class="type-pill">Carpentry</div>
-                            <div class="type-pill">HVAC</div>
-                            <div class="type-pill">Painting</div>
+                            @foreach($handymanTags as $index => $tag)
+                                <div class="type-pill {{ $index === 0 ? 'active' : '' }}">{{ $tag }}</div>
+                            @endforeach
                         </div>
                     </div>
                     <div class="form-group">

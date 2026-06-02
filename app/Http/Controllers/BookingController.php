@@ -30,6 +30,13 @@ class BookingController extends Controller
         $avgRating = $handyman->ratings()->avg('Rating');
         $handyman->avg_rating = $avgRating ? round($avgRating, 1) : null;
 
+        // Parse handyman tags
+        $userTags = is_string($handyman->Tags) ? json_decode($handyman->Tags, true) ?? [] : (is_array($handyman->Tags) ? $handyman->Tags : []);
+        $handymanTags = array_values(array_filter(array_map('ucwords', array_map('strtolower', array_map('trim', $userTags)))));
+        if (empty($handymanTags)) {
+            $handymanTags = ['Handyman']; // Fallback
+        }
+
         // Load existing bookings for this handyman (non-cancelled)
         $existingBookings = Job::where('HandymanID', $handyman->UserID)
             ->whereNotIn('JobStatus', ['cancelled'])
@@ -42,7 +49,7 @@ class BookingController extends Controller
                 ];
             });
 
-        return view('booking.create', compact('handyman', 'existingBookings'));
+        return view('booking.create', compact('handyman', 'existingBookings', 'handymanTags'));
     }
 
     public function store(Request $request)
