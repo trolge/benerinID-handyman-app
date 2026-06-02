@@ -12,7 +12,7 @@ class MarketplaceController extends Controller
         ['slug' => 'plumbing', 'name' => 'Plumbing', 'desc' => 'Leak Repair, Pipe Routing', 'image' => 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=500&auto=format&fit=crop'],
         ['slug' => 'electrical', 'name' => 'Electrical', 'desc' => 'Circuit Repair, Smart Home', 'image' => 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=500&auto=format&fit=crop'],
         ['slug' => 'cleaning', 'name' => 'Home Cleaning', 'desc' => 'Full Sanitization, Office', 'image' => 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=500&auto=format&fit=crop'],
-        ['slug' => 'hvac', 'name' => 'HVAC & AC', 'desc' => 'Filter Replacement, Compressor', 'image' => 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=500&auto=format&fit=crop'],
+        ['slug' => 'hvac', 'name' => 'HVAC & AC', 'desc' => 'Filter Replacement, Compressor', 'image' => '/images/ac.png'],
         ['slug' => 'carpentry', 'name' => 'Carpentry', 'desc' => 'Cabinetry, Furniture Repair', 'image' => 'https://images.unsplash.com/photo-1581141849291-1125c7b692b5?w=500&auto=format&fit=crop'],
         ['slug' => 'painting', 'name' => 'Painting', 'desc' => 'Interior, Exterior, Touchups', 'image' => 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=500&auto=format&fit=crop']
     ];
