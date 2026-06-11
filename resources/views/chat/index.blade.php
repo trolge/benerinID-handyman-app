@@ -344,7 +344,8 @@
                     if (emptyEl) emptyEl.remove();
 
                     const container = document.getElementById('chatMessages');
-                    let lastRenderedDate = container.querySelector('.msg-date-divider:last-of-type span')?.textContent || '';
+                    const dividers = container.querySelectorAll('.msg-date-divider span');
+                    let lastRenderedDate = dividers.length > 0 ? dividers[dividers.length - 1].textContent : '';
 
                     newMsgs.forEach(msg => {
                         // Date divider
@@ -356,6 +357,11 @@
                             divider.innerHTML = `<span>${msgDateLabel}</span>`;
                             container.appendChild(divider);
                             lastRenderedDate = msgDateLabel;
+                        }
+
+                        if (msg.is_mine) {
+                            const pendingRow = container.querySelector('.msg-row.mine.pending-msg');
+                            if (pendingRow) pendingRow.remove();
                         }
 
                         const row = document.createElement('div');
@@ -412,7 +418,7 @@
             if (emptyEl) emptyEl.remove();
 
             const row = document.createElement('div');
-            row.className = 'msg-row mine';
+            row.className = 'msg-row mine pending-msg';
             const now = new Date();
             const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
             row.innerHTML = `

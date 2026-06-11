@@ -377,7 +377,7 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <span class="stat-label">Total Earnings</span>
-                    <div class="stat-value">${{ number_format($totalEarnings, 2) }} <span class="stat-badge" style="background: var(--bg-page); border: 1px solid var(--border-color); color: var(--text-muted); border-radius: 12px; padding: 0.2rem 0.6rem;">0.0%</span></div>
+                    <div class="stat-value">${{ number_format($totalEarnings, 2) }}</span></div>
                 </div>
                 <div class="stat-card">
                     <span class="stat-label">Active Jobs</span>

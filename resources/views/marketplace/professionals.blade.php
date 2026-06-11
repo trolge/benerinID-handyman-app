@@ -915,6 +915,5 @@
           document.getElementById('reviewsModal').addEventListener('click', function(e) {
             if (e.target === this) closeReviewsModal();
         });
-            < /s
-cript> 
+        </script>
  </body></html>
